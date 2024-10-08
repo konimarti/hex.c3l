@@ -28,22 +28,20 @@ const REVERSE_HEXTABLE = ""
 /* Returns the length of an encoding of n source bytes. */
 fn int encoded_len(int n) => n * 2;
 
-/* Hexadecimal Encodes src into dst. Returns the number of bytes written to
- * dst.
+/* Encodes bytes in src into dst as hexadecimal. Returns the number of bytes
+ * written to dst.
  */
  import std::io;
 fn int encode(char[] src, char[] dst) {
 	int j = 0;
 	foreach (v : src) {
-		io::printfn("v=%d", v);
-		io::printfn("v>>4=%d", v>>4);
-
-		dst[j] = HEXTABLE[v>>4];
-		dst[j + 1] = HEXTABLE[v&0x0f];
+		dst[j] = HEXTABLE[v >> 4];
+		dst[j + 1] = HEXTABLE[v & 0x0f];
 		j = j + 2;
 	}
 	return src.len * 2;
 }
+
 
 module encoding::hex @test;
 
@@ -57,7 +55,10 @@ struct TestCase {
 TestCase[] tests = {
 	{"", ""},
 	{{'g'}, "67"},
-	{{'0','1','2','3','4','5','6','7'}, "0001020304050607"},
+	{{0,1,2,3,4,5,6,7}, "0001020304050607"},
+	{{8,9,10,11,12,13,14,15}, "08090a0b0c0d0e0f"},
+	{{0xf0, 0xf1, 0xf2, 0xf3}, "f0f1f2f3"},
+	{{0xe3, 0xa1}, "e3a1"},
 };
 
 fn void test_encode() {
@@ -65,8 +66,7 @@ fn void test_encode() {
 	foreach (t : tests) {
 		char [64] buf;
 		n = hex::encode(t.input, buf[:t.input.len*2]);
-		io::printfn("got: %s, wanted: %s", buf[:n], t.expected);
-		assert(t.expected == buf[:n]);
+		assert(t.expected == buf[:n], "got: %s, wanted: %s", buf[:n], t.expected);
 	}
 }
 
