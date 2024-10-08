@@ -78,7 +78,8 @@ fn int encode(char[] dst, char[] src) {
 
 fault Errors {
 	INVALID_LENGTH,
-	INVALID_BYTE
+	INVALID_BYTE,
+	DUMPER_CLOSED
 }
 
 /* Returns the length of a decoding of x source bytes. */
@@ -118,81 +119,149 @@ fn int! decode(char[] dst, char[] src) {
 	return i;
 }
 
-macro char toChar(b) => (b < 32 || b > 126) ? '.' : b;
+/*
+ * Dumper implements the OutStream interface.
+ */
+struct Dumper (OutStream) {
+	OutStream out;
+	char[18] rightChars;
+	char[14] buf;
+	usz used; 
+	usz n;
+	bool closed;
+}
+
+/**
+ * @require io::@is_outstream(out) "The output must implement OutStream"
+ **/
+fn Dumper dumper(OutStream out = io::stdout()) {
+	return {.out = out};
+}
+
+fn void! Dumper.write_byte(&self, char c) @dynamic {
+	char[*] data = { c };
+	usz! n = self.write(&data);
+	if (catch excuse = n) {
+		return excuse?;
+	}
+}
+
+fn usz! Dumper.write(&self, char[] data) @dynamic {
+	if (self.closed) {
+		return Errors.DUMPER_CLOSED?;
+	}
+
+	usz l, n;
+	for (int i = 0; i < data.len; i++) {
+		if (self.used == 0) {
+			// at the beginnig of a line we print the current 
+			// offset in hex.
+			self.buf[0] = (char)(n >> 24);
+			self.buf[1] = (char)(n >> 16);
+			self.buf[2] = (char)(n >> 8);
+			self.buf[3] = (char)n;
+			encode(self.buf[4..], self.buf[..4]);
+			self.buf[12] = ' ';
+			self.buf[13] = ' ';
+			io::fprint(self.out, self.buf[4..])!;
+		}
+		encode(&self.buf, data[i:1]);
+		self.buf[2] = ' ';
+		l = 3;
+		if (self.used == 7) {
+			self.buf[3] = ' ';
+			l = 4;
+		} else if (self.used == 15) {
+			self.buf[3] = ' ';
+			self.buf[4] = '|';
+			l = 5;
+		}
+		io::fprint(self.out, self.buf[:l])!;
+		n++;
+		self.rightChars[self.used] = toChar(data[i]);
+		self.used++;
+		self.n++;
+		if (self.used == 16) {
+			self.rightChars[16] = '|';
+			self.rightChars[17] = '\n';
+			io::fprint(self.out, self.rightChars[0..])!;
+			self.used = 0;
+		}
+	}
+	return n;
+}
+
+macro char toChar(b) @private => (b < 32 || b > 126) ? '.' : b;
+
+fn void! Dumper.flush(&self) @dynamic {
+	if (self.closed) {
+		return Errors.DUMPER_CLOSED?;
+	}
+
+	int l;
+	if (self.used == 0) return;
+	self.buf[0] = ' ';
+	self.buf[1] = ' ';
+	self.buf[2] = ' ';
+	self.buf[3] = ' ';
+	self.buf[4] = '|';
+
+	usz nbytes = self.used;
+	while (self.used < 16) {
+		l = 3;
+		if (self.used == 7) {
+			l = 4;
+		} else if (self.used == 15) {
+			l = 5;
+		}
+		io::fprint(self.out, self.buf[:l])!;
+		self.used++;
+	}
+	self.rightChars[nbytes] = '|';
+	self.rightChars[nbytes+1] = '\n';
+	io::fprint(self.out, self.rightChars[:nbytes+2])!;
+}
+
+fn void! Dumper.close(&self) @dynamic {
+	if (self.closed) {
+		return;
+	}
+	self.flush()!;
+	self.closed = true;
+}
 
 /**
  * Dump bytes similar to how 'hexdump -C' output looks like.
- *
- * hex::dump("./0123456789:;<=")!;
  *
  * Output lines look like:
  * 00000010  2e 2f 30 31 32 33 34 35  36 37 38 39 3a 3b 3c 3d  |./0123456789:;<=|
  * ^ offset                          ^ extra space              ^ ASCII of line.
  *
- * @require io::@is_outstream(out) "The output must implement OutStream"
+ * @require io::@is_instream(in) "input must implement InStream"
+ * @require io::@is_outstream(out) "output must implement OutStream"
  **/
-fn void! dump(char[] data, OutStream out = io::stdout()) {
-	char[18] rightChars;
-	char[14] buf;
-	usz used, n;
-	int l;
-	for (int i = 0; i < data.len; i++) {
-		if (used == 0) {
-			// at the beginnig of a line we print the current 
-			// offset in hex.
-			buf[0] = (char)(n >> 24);
-			buf[1] = (char)(n >> 16);
-			buf[2] = (char)(n >> 8);
-			buf[3] = (char)n;
-			encode(buf[4..], buf[..4]);
-			buf[12] = ' ';
-			buf[13] = ' ';
-			io::fprint(out, buf[4..])!;
-		}
-		encode(&buf, data[i:1]);
-		buf[2] = ' ';
-		l = 3;
-		if (used == 7) {
-			buf[3] = ' ';
-			l = 4;
-		} else if (used == 15) {
-			buf[3] = ' ';
-			buf[4] = '|';
-			l = 5;
-		}
-		io::fprint(out, buf[:l])!;
-		n++;
-		rightChars[used] = toChar(data[i]);
-		used++;
-		n++;
-		if (used == 16) {
-			rightChars[16] = '|';
-			rightChars[17] = '\n';
-			io::fprint(out, rightChars[0..])!;
-			used = 0;
-		}
-	}
+fn void! dump(InStream in, OutStream out = io::stdout()) {
+	char[16] buf;
+	usz! n, w;
 
-	// clean out buffer when done with data
-	if (used == 0) return;
-	buf[0] = ' ';
-	buf[1] = ' ';
-	buf[2] = ' ';
-	buf[3] = ' ';
-	buf[4] = '|';
-
-	usz nbytes = used;
-	while (used < 16) {
-		l = 3;
-		if (used == 7) {
-			l = 4;
-		} else if (used == 15) {
-			l = 5;
+	Dumper d = dumper(out);
+	for (;;) {
+		n = in.read(&buf);
+		if (catch excuse = n) {
+			// io::printfn("excuse: %s", excuse);
+			break;
 		}
-		io::fprint(out, buf[:l])!;
-		used++;
-	}
-	rightChars[nbytes] = '|';
-	rightChars[nbytes+1] = '\n';
-	io::fprint(out, rightChars[:nbytes+2])!;
+		w = d.write(buf[:n]);
+		if (catch excuse = w) {
+			// io::printfn("excuse: %s", excuse);
+			break;
+		}
+		if (n<16) break;
+	} 
+	return d.close();
+}
+
+fn void! dump_bytes(char[] bytes, OutStream out = io::stdout()) {
+	ByteReader r;
+	return dump(r.init(bytes), out);
 }
