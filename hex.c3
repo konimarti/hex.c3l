@@ -2,7 +2,6 @@
  * Hex implements hexadecimal encoding and decoding.
  * Based on the Go implementation src/encoding/hex/hex.go
  */
-
 module encoding::hex;
 
 const char[*] HEXTABLE = "0123456789abcdef";
@@ -26,11 +25,14 @@ x"ffffffffffffffffffffffffffffffff";
 
 
 /* Returns the length of an encoding of n source bytes. */
-fn int encoded_len(int n) => n * 2;
+macro int encoded_len(int n) => n * 2;
 
-/* Hexadecimally encodes bytes in src into dst. Returns the number of bytes
+/**
+ * Hexadecimally encodes bytes in src into dst. Returns the number of bytes
  * written to dst.
- */
+ *
+ * @require dst.len >= encoded_len(src.len)
+ **/
 fn int encode(char[] src, char[] dst) {
 	int j = 0;
 	foreach (v : src) {
@@ -47,21 +49,19 @@ fault Errors {
 }
 
 /* Returns the length of a decoding of x source bytes. */
-fn int decoded_len(int x) => x / 2;
+macro int decoded_len(int x) => x / 2;
 
-/* Decodes src into bytes. Returns the actual number of bytes written to dst.
+/**
+ * Decodes src into bytes. Returns the actual number of bytes written to dst.
  *
  * Expects that src only contains hexadecimal characters and that src has even
  * length.
  *
- */
+ * @require dst.len >= decoded_len(src.len)
+ **/
 fn int! decode(char[] dst, char[] src) {
-	int i;
-	int j;
-	char p;
-	char q;
-	char a;
-	char b;
+	int i, j;
+	char p, q, a, b;
 	for (j = 1; j < src.len; j += 2) {
 		p = src[j-1];
 		q = src[j];
