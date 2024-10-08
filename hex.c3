@@ -125,7 +125,7 @@ macro char toChar(b) => (b < 32 || b > 126) ? '.' : b;
  *
  * @require io::@is_outstream(out) "The output must implement OutStream"
  **/
-fn void! dump(OutStream out, char[] data) {
+fn void! dump(char[] data, OutStream out = io::stdout()) {
 	int used, l;
 	char[18] rightChars;
 	char[14] buf;
