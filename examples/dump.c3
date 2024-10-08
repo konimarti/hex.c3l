@@ -1,6 +1,5 @@
-import std::io;
 import encoding::hex;
 
 fn void! main() {
-	hex::dump("c3 is fun")!;
+	hex::dump("\t c3 is great! \n")!;
 }

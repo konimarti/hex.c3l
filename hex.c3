@@ -37,8 +37,8 @@ import std::io;
 // ----------------------------------------------------------------------
 
 
-const char[*] HEXTABLE = "0123456789abcdef";
-const char[*] REVERSE_HEXTABLE = x""
+const char[*] HEXTABLE @private = "0123456789abcdef";
+const char[*] REVERSE_HEXTABLE @private = x""
 x"ffffffffffffffffffffffffffffffff"
 x"ffffffffffffffffffffffffffffffff"
 x"ffffffffffffffffffffffffffffffff"
@@ -64,7 +64,7 @@ macro int encoded_len(int n) => n * 2;
  * Hexadecimally encodes bytes in src into dst. Returns the number of bytes
  * written to dst.
  *
- * require dst.len >= encoded_len(src.len)
+ * @require dst.len >= encoded_len(src.len) "Destination array is not large enough"
  **/
 fn int encode(char[] dst, char[] src) {
 	int j = 0;
@@ -90,7 +90,7 @@ macro int decoded_len(int x) => x / 2;
  * Expects that src only contains hexadecimal characters and that src has even
  * length.
  *
- * @require dst.len >= decoded_len(src.len)
+ * @require dst.len >= decoded_len(src.len) "Destination array is not large enough"
  **/
 fn int! decode(char[] dst, char[] src) {
 	int i, j;
@@ -121,27 +121,35 @@ fn int! decode(char[] dst, char[] src) {
 macro char toChar(b) => (b < 32 || b > 126) ? '.' : b;
 
 /**
- * Dump bytes. Mimic 'hexdump -C'.
+ * Dump bytes similar to how 'hexdump -C' output looks like.
+ *
+ * hex::dump("./0123456789:;<=")!;
+ *
+ * Output lines look like:
+ * 00000010  2e 2f 30 31 32 33 34 35  36 37 38 39 3a 3b 3c 3d  |./0123456789:;<=|
+ * ^ offset                          ^ extra space              ^ ASCII of line.
  *
  * @require io::@is_outstream(out) "The output must implement OutStream"
  **/
 fn void! dump(char[] data, OutStream out = io::stdout()) {
-	int used, l;
 	char[18] rightChars;
 	char[14] buf;
-	char n;
+	usz used, n;
+	int l;
 	for (int i = 0; i < data.len; i++) {
 		if (used == 0) {
-			buf[0] = n >> 24;
-			buf[1] = n >> 16;
-			buf[2] = n >> 8;
-			buf[3] = n;
+			// at the beginnig of a line we print the current 
+			// offset in hex.
+			buf[0] = (char)(n >> 24);
+			buf[1] = (char)(n >> 16);
+			buf[2] = (char)(n >> 8);
+			buf[3] = (char)n;
 			encode(buf[4..], buf[..4]);
 			buf[12] = ' ';
 			buf[13] = ' ';
-			io::fprintf(out, "%s", buf[4..])!;
+			io::fprint(out, buf[4..])!;
 		}
-		encode(&buf, data[i:i+1]);
+		encode(&buf, data[i:1]);
 		buf[2] = ' ';
 		l = 3;
 		if (used == 7) {
@@ -152,7 +160,7 @@ fn void! dump(char[] data, OutStream out = io::stdout()) {
 			buf[4] = '|';
 			l = 5;
 		}
-		io::fprintf(out, "%s", buf[..l])!;
+		io::fprint(out, buf[:l])!;
 		n++;
 		rightChars[used] = toChar(data[i]);
 		used++;
@@ -160,8 +168,31 @@ fn void! dump(char[] data, OutStream out = io::stdout()) {
 		if (used == 16) {
 			rightChars[16] = '|';
 			rightChars[17] = '\n';
-			io::fprintf(out, "%s", rightChars)!;
+			io::fprint(out, rightChars[0..])!;
 			used = 0;
 		}
 	}
+
+	// clean out buffer when done with data
+	if (used == 0) return;
+	buf[0] = ' ';
+	buf[1] = ' ';
+	buf[2] = ' ';
+	buf[3] = ' ';
+	buf[4] = '|';
+
+	usz nbytes = used;
+	while (used < 16) {
+		l = 3;
+		if (used == 7) {
+			l = 4;
+		} else if (used == 15) {
+			l = 5;
+		}
+		io::fprint(out, buf[:l])!;
+		used++;
+	}
+	rightChars[nbytes] = '|';
+	rightChars[nbytes+1] = '\n';
+	io::fprint(out, rightChars[:nbytes+2])!;
 }

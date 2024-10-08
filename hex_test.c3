@@ -21,7 +21,7 @@ fn void test_encode() {
 	int n;
 	foreach (t : tests) {
 		char [64] buf;
-		n = hex::encode(t.dec, buf[:encoded_len(t.dec.len)]);
+		n = hex::encode(buf[:encoded_len(t.dec.len)], t.dec);
 		// String enc = ((String)t.enc).temp_ascii_to_lower();
 		String enc = ((String)t.enc).temp_ascii_to_lower();
 		assert(enc == buf[:n], "got: %s, wanted: %s", buf[:n], enc);

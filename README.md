@@ -16,15 +16,16 @@ Add the path to the `hex.c3l` folder to `dependency-search-paths` and
 
 ### Example
 
--   Dump hex code like `hexdump -C`
+-   Hex code dump like `hexdump -C`
 
 ```cpp
-// c3c compile-run examples/dump.c3
-import std::io;
 import encoding::hex;
 
 fn void! main() {
-	hex::dump("c3 is fun")!;
+	hex::dump("\t c3 is great! \n")!;
 }
 
+// Output:
+// $ c3c compile-run examples/dump.c3
+// 00000000  09 20 63 33 20 69 73 20  67 72 65 61 74 21 20 0a  |. c3 is great! .|
 ```
