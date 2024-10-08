@@ -1,8 +1,41 @@
 /*
  * Hex implements hexadecimal encoding and decoding.
- * Based on the Go implementation src/encoding/hex/hex.go
  */
 module encoding::hex;
+import std::io;
+
+// The hex encoding module is based on code from Go (src/encoding/hex/hex.go)
+// by the Go Authors and governed by a BSD-style license, copied below:
+// ----------------------------------------------------------------------
+// Copyright (c) 2009 The Go Authors. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//    * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//    * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ----------------------------------------------------------------------
+
 
 const char[*] HEXTABLE = "0123456789abcdef";
 const char[*] REVERSE_HEXTABLE = x""
@@ -31,9 +64,9 @@ macro int encoded_len(int n) => n * 2;
  * Hexadecimally encodes bytes in src into dst. Returns the number of bytes
  * written to dst.
  *
- * @require dst.len >= encoded_len(src.len)
+ * require dst.len >= encoded_len(src.len)
  **/
-fn int encode(char[] src, char[] dst) {
+fn int encode(char[] dst, char[] src) {
 	int j = 0;
 	foreach (v : src) {
 		dst[j] = HEXTABLE[v >> 4];
@@ -83,4 +116,52 @@ fn int! decode(char[] dst, char[] src) {
 		return Errors.INVALID_LENGTH?;
 	}
 	return i;
+}
+
+macro char toChar(b) => (b < 32 || b > 126) ? '.' : b;
+
+/**
+ * Dump bytes. Mimic 'hexdump -C'.
+ *
+ * @require io::@is_outstream(out) "The output must implement OutStream"
+ **/
+fn void! dump(OutStream out, char[] data) {
+	int used, l;
+	char[18] rightChars;
+	char[14] buf;
+	char n;
+	for (int i = 0; i < data.len; i++) {
+		if (used == 0) {
+			buf[0] = n >> 24;
+			buf[1] = n >> 16;
+			buf[2] = n >> 8;
+			buf[3] = n;
+			encode(buf[4..], buf[..4]);
+			buf[12] = ' ';
+			buf[13] = ' ';
+			io::fprintf(out, "%s", buf[4..])!;
+		}
+		encode(&buf, data[i:i+1]);
+		buf[2] = ' ';
+		l = 3;
+		if (used == 7) {
+			buf[3] = ' ';
+			l = 4;
+		} else if (used == 15) {
+			buf[3] = ' ';
+			buf[4] = '|';
+			l = 5;
+		}
+		io::fprintf(out, "%s", buf[..l])!;
+		n++;
+		rightChars[used] = toChar(data[i]);
+		used++;
+		n++;
+		if (used == 16) {
+			rightChars[16] = '|';
+			rightChars[17] = '\n';
+			io::fprintf(out, "%s", rightChars)!;
+			used = 0;
+		}
+	}
 }
