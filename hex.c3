@@ -167,10 +167,10 @@ fn usz! Dumper.write(&self, char[] data) @dynamic {
 		if (self.used == 0) {
 			// at the beginnig of a line we print the current 
 			// offset in hex.
-			self.buf[0] = (char)(n >> 24);
-			self.buf[1] = (char)(n >> 16);
-			self.buf[2] = (char)(n >> 8);
-			self.buf[3] = (char)n;
+			self.buf[0] = (char)(self.n >> 24);
+			self.buf[1] = (char)(self.n >> 16);
+			self.buf[2] = (char)(self.n >> 8);
+			self.buf[3] = (char)self.n;
 			encode(self.buf[4..], self.buf[..4]);
 			self.buf[12] = ' ';
 			self.buf[13] = ' ';
