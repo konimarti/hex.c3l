@@ -35,14 +35,24 @@ fn void test_encode_to_string() {
 	}
 }
 
+fn void test_encoder() {
+	char[64] buf;
+	HexEncoder enc;
+	ByteWriter w;
+	foreach (t : tests) {
+		enc.init(w.init_with_buffer(&buf));
+		enc.write(t.dec)!;
+		String want = ((String)t.enc).temp_ascii_to_lower();
+		String got = w.str_view();
+		assert(got == want, "got: %s, wanted: %s", got, want);
+	}
+}
+
 fn void test_decode() {
-	int! n;
+	int n;
 	foreach (t : tests) {
 		char [64] buf;
-		n = hex::decode(buf[:decoded_len(t.enc.len)], t.enc);
-		if (catch excuse = n) {
-			assert(false, "caught: %s", excuse);
-		}
+		n = hex::decode(buf[:decoded_len(t.enc.len)], t.enc)!;
 		assert(t.dec == buf[:n], "got: %s, wanted: %s", buf[:n], t.dec);
 	}
 }

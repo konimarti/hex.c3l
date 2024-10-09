@@ -81,22 +81,52 @@ fn int encode(char[] dst, char[] src) {
 	return src.len * 2;
 }
 
-fault Errors {
-	INVALID_LENGTH,
-	INVALID_BYTE,
-	DUMPER_CLOSED
-}
-
 /**
- * Returns the hexadeicmal encoding of src. Returned string is allocated with
+ * Returns the hexadecimal encoding of src. Returned string is allocated with
  * the provided allocator (default: heap).
  *
  **/
- fn String encode_to_string(char[] src, Allocator allocator = allocator::heap()) {
-	 char[] dst = allocator::alloc_array(allocator, char, encoded_len(src.len));
-	 int n = encode(dst, src);
-	 return (String)dst;
- }
+fn String encode_to_string(char[] src, Allocator allocator = allocator::heap()) {
+	char[] dst = allocator::alloc_array(allocator, char, encoded_len(src.len));
+	int n = encode(dst, src);
+	return (String)dst;
+}
+
+/* Number of hexadecimal characters to buffer in encoder and decoder. */
+const BUFFERSIZE = 1024;
+
+struct HexEncoder (OutStream) {
+	OutStream w;
+	char[BUFFERSIZE] out; /* output buffer */
+}
+
+/**
+ * HexEncoder writes lowercase hexadecimal characters to w.
+ **/
+fn HexEncoder* HexEncoder.init(&self, OutStream w, Allocator allocator = allocator::heap()) {
+	self.w = w;
+	return self;
+}
+
+fn void! HexEncoder.write_byte(&self, char c) @dynamic {
+	char[*] data = { c };
+	self.write(&data)!;
+}
+
+fn usz! HexEncoder.write(&self, char[] p) @dynamic {
+	int encoded, chunkSize;
+	usz n, written;
+	while (p.len > 0) {
+		chunkSize = BUFFERSIZE / 2;
+		if (p.len < chunkSize) chunkSize = p.len;
+
+		encoded = encode(&self.out, p[:chunkSize]);
+		written = self.w.write(self.out[:encoded])!;
+		n += written / 2;
+		p = p[chunkSize..];
+	}
+	return n;
+}
 
 /* Returns the length of a decoding of x source bytes. */
 macro int decoded_len(int x) => x / 2;
