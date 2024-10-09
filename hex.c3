@@ -82,6 +82,17 @@ fault Errors {
 	DUMPER_CLOSED
 }
 
+/**
+ * Returns the hexadeicmal encoding of src. Returned string is allocated with
+ * the provided allocator (default: heap).
+ *
+ **/
+ fn String encode_to_string(char[] src, Allocator allocator = allocator::heap()) {
+	 char[] dst = allocator::alloc_array(allocator, char, encoded_len(src.len));
+	 int n = encode(dst, src);
+	 return (String)dst;
+ }
+
 /* Returns the length of a decoding of x source bytes. */
 macro int decoded_len(int x) => x / 2;
 

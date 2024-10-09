@@ -27,6 +27,14 @@ fn void test_encode() {
 	}
 }
 
+fn void test_encode_to_string() {
+	foreach (t : tests) {
+		String got = hex::encode_to_string(t.dec, allocator::temp());
+		String want = ((String)t.enc).temp_ascii_to_lower();
+		assert(got == want, "got: %s, wanted: %s", got, want);
+	}
+}
+
 fn void test_decode() {
 	int! n;
 	foreach (t : tests) {
