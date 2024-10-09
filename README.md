@@ -1,6 +1,7 @@
 # Hex encoding in C3
 
-Hex encoding and decoding in C3.
+Hex encoding and decoding in C3. Port of Go's
+[encoding/hex](https://pkg.go.dev/encoding/hexp) package.
 
 ### Setup
 
