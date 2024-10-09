@@ -47,6 +47,14 @@ fn void test_decode() {
 	}
 }
 
+fn void test_decode_string() {
+	foreach (t : tests) {
+		String input = ((String)t.enc).temp_ascii_to_lower();
+		char[] got = hex::decode_string((String)t.enc, allocator::temp())!;
+		assert((String)got == (String)t.dec, "got: %s, wanted: %s", got, t.dec);
+	}
+}
+
 fn void test_dump_bytes() {
 	char [40] input;
 	foreach (i, &c : input) *c = (char)i + 30;

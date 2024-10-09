@@ -130,6 +130,17 @@ fn int! decode(char[] dst, char[] src) {
 	return i;
 }
 
+/**
+ * Returns the bytes represented by the hexadecimal string s.
+ *
+ **/
+ fn char[]! decode_string(String s, Allocator allocator = allocator::heap()) {
+	 char[] dst = allocator::alloc_array(allocator, char, decoded_len(s.len));
+	 decode(dst, s)!;
+	 return dst;
+ }
+
+
 /*
  * Dumper implements the OutStream interface.
  */
