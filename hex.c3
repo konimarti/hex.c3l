@@ -2,6 +2,7 @@
  * Hex implements hexadecimal encoding and decoding.
  */
 module encoding::hex;
+import encoding::hex::internal @public;
 import std::io;
 
 // The hex encoding module is based on code from Go (src/encoding/hex/hex.go)
@@ -36,26 +37,6 @@ import std::io;
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ----------------------------------------------------------------------
 
-
-const char[*] HEXTABLE @private = "0123456789abcdef";
-const char[*] REVERSE_HEXTABLE @private = x""
-x"ffffffffffffffffffffffffffffffff"
-x"ffffffffffffffffffffffffffffffff"
-x"ffffffffffffffffffffffffffffffff"
-x"00010203040506070809ffffffffffff"
-x"ff0a0b0c0d0e0fffffffffffffffffff"
-x"ffffffffffffffffffffffffffffffff"
-x"ff0a0b0c0d0e0fffffffffffffffffff"
-x"ffffffffffffffffffffffffffffffff"
-x"ffffffffffffffffffffffffffffffff"
-x"ffffffffffffffffffffffffffffffff"
-x"ffffffffffffffffffffffffffffffff"
-x"ffffffffffffffffffffffffffffffff"
-x"ffffffffffffffffffffffffffffffff"
-x"ffffffffffffffffffffffffffffffff"
-x"ffffffffffffffffffffffffffffffff"
-x"ffffffffffffffffffffffffffffffff";
-
 fault Errors {
 	INVALID_LENGTH,
 	INVALID_BYTE,
@@ -74,8 +55,8 @@ macro int encoded_len(int n) => n * 2;
 fn int encode(char[] dst, char[] src) {
 	int j = 0;
 	foreach (v : src) {
-		dst[j] = HEXTABLE[v >> 4];
-		dst[j + 1] = HEXTABLE[v & 0x0f];
+		dst[j] = internal::HEXTABLE[v >> 4];
+		dst[j + 1] = internal::HEXTABLE[v & 0x0f];
 		j = j + 2;
 	}
 	return src.len * 2;
@@ -145,8 +126,8 @@ fn int! decode(char[] dst, char[] src) {
 	for (j = 1; j < src.len; j += 2) {
 		p = src[j-1];
 		q = src[j];
-		a = REVERSE_HEXTABLE[p];
-		b = REVERSE_HEXTABLE[q];
+		a = internal::REVERSE_HEXTABLE[p];
+		b = internal::REVERSE_HEXTABLE[q];
 		if (a > 0x0f) {
 			return Errors.INVALID_BYTE?;
 		}
@@ -157,7 +138,7 @@ fn int! decode(char[] dst, char[] src) {
 		i++;
 	}
 	if (src.len % 2 == 1) {
-		if (REVERSE_HEXTABLE[src[j-1]] > 0x0f) {
+		if (internal::REVERSE_HEXTABLE[src[j-1]] > 0x0f) {
 			return Errors.INVALID_BYTE?;
 		}
 		return Errors.INVALID_LENGTH?;
@@ -318,3 +299,27 @@ fn void! dump(InStream in, OutStream out = io::stdout()) {
 fn void! dump_bytes(char[] bytes, OutStream out = io::stdout()) {
 	return dump(ByteReader{}.init(bytes), out);
 }
+
+/*
+ * internal data tables for the encoding::hex module.
+ */
+module encoding::hex::internal @private;
+
+const char[*] HEXTABLE = "0123456789abcdef";
+const char[*] REVERSE_HEXTABLE = x""
+x"ffffffffffffffffffffffffffffffff"
+x"ffffffffffffffffffffffffffffffff"
+x"ffffffffffffffffffffffffffffffff"
+x"00010203040506070809ffffffffffff"
+x"ff0a0b0c0d0e0fffffffffffffffffff"
+x"ffffffffffffffffffffffffffffffff"
+x"ff0a0b0c0d0e0fffffffffffffffffff"
+x"ffffffffffffffffffffffffffffffff"
+x"ffffffffffffffffffffffffffffffff"
+x"ffffffffffffffffffffffffffffffff"
+x"ffffffffffffffffffffffffffffffff"
+x"ffffffffffffffffffffffffffffffff"
+x"ffffffffffffffffffffffffffffffff"
+x"ffffffffffffffffffffffffffffffff"
+x"ffffffffffffffffffffffffffffffff"
+x"ffffffffffffffffffffffffffffffff";
