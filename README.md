@@ -3,7 +3,7 @@
 Hex encoding and decoding in C3. Port of Go's
 [encoding/hex](https://pkg.go.dev/encoding/hex) package.
 
-### Setup
+### Install
 
 Add the path to the `hex.c3l` folder to `dependency-search-paths` and
 `hex` to `dependencies` in your `project.json` file:
