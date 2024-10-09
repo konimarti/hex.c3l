@@ -16,9 +16,9 @@ Add the path to the `hex.c3l` folder to `dependency-search-paths` and
 
 ### Examples
 
--   Hex code dump like `hexdump -C`
+Hex code dump like `hexdump -Cv`
 
-    -   use `hex::dump_bytes` with `char[]`:
+-   use `hex::dump_bytes` with a `char[]` argument:
 
     ```cpp
     // $ c3c compile-run hex.c3 examples/dump_bytes.c3
@@ -34,10 +34,10 @@ Add the path to the `hex.c3l` folder to `dependency-search-paths` and
     }
     ```
 
-    -   use `hex::dump` with `InStream`:
+-   use `hex::dump` with an `InStream` argument:
 
     ```cpp
-    // $ c3c compile-run hex.c3 examples/dump.c3 < /usr/bin/echo
+    // $ c3c compile-run hex.c3 examples/dump.c3 < /usr/bin/echo # or any other binary
     import encoding::hex;
     import std::io;
 
