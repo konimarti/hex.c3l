@@ -22,7 +22,6 @@ fn void test_encode() {
 	foreach (t : tests) {
 		char [64] buf;
 		n = hex::encode(buf[:encoded_len(t.dec.len)], t.dec);
-		// String enc = ((String)t.enc).temp_ascii_to_lower();
 		String enc = ((String)t.enc).temp_ascii_to_lower();
 		assert(enc == buf[:n], "got: %s, wanted: %s", buf[:n], enc);
 	}
@@ -34,9 +33,20 @@ fn void test_decode() {
 		char [64] buf;
 		n = hex::decode(buf[:decoded_len(t.enc.len)], t.enc);
 		if (catch excuse = n) {
-			io::printfn("caught: %s", excuse);
-			assert(false, "caught error");
+			assert(false, "caught: %s", excuse);
 		}
 		assert(t.dec == buf[:n], "got: %s, wanted: %s", buf[:n], t.dec);
 	}
+}
+
+fn void test_dump_bytes() {
+	String input = "\t c3 is great! \n";
+	ByteWriter w;
+	w.new_init();
+	w.ensure_capacity(hex::decoded_len(input.len))!!;
+	hex::dump_bytes(input, &w)!!;
+	String expected = "00000000  09 20 63 33 20 69 73 20  67 72 65 61 74 21 20 0a  |. c3 is great! .|\n";
+	String got = w.str_view();
+	assert(got == expected, "got: %s, wanted: %s", got, expected);
+	w.destroy()!!;
 }
