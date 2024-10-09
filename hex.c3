@@ -40,7 +40,8 @@ import std::io;
 fault Errors {
 	INVALID_LENGTH,
 	INVALID_BYTE,
-	DUMPER_CLOSED
+	DUMPER_CLOSED,
+	UNEXPECTED_EOF
 }
 
 /* Returns the length of an encoding of n source bytes. */
@@ -76,14 +77,14 @@ fn String encode_to_string(char[] src, Allocator allocator = allocator::heap()) 
 /* Number of hexadecimal characters to buffer in encoder and decoder. */
 const BUFFERSIZE = 1024;
 
+/**
+ * HexEncoder writes lowercase hexadecimal characters to w.
+ **/
 struct HexEncoder (OutStream) {
 	OutStream w;
 	char[BUFFERSIZE] out; /* output buffer */
 }
 
-/**
- * HexEncoder writes lowercase hexadecimal characters to w.
- **/
 fn HexEncoder* HexEncoder.init(&self, OutStream w, Allocator allocator = allocator::heap()) {
 	self.w = w;
 	return self;
@@ -155,6 +156,51 @@ fn int! decode(char[] dst, char[] src) {
 	 decode(dst, s)!;
 	 return dst;
  }
+
+/**
+ * HexDecoder reads lowercase hexadecimal characters to w.
+ **/
+struct HexDecoder (InStream) {
+	InStream r;
+	char[] in; 		/* input buffer (encoded form) */
+	char[BUFFERSIZE] arr; 	/* backing array for in */
+}
+
+fn HexDecoder* HexDecoder.init(&self, InStream r, Allocator allocator = allocator::heap()) {
+	self.r = r;
+	return self;
+}
+
+fn char! HexDecoder.read_byte(&self) @dynamic {
+	char[1] data;
+	self.read(&data)!;
+	return data[0];
+}
+
+fn usz! HexDecoder.read(&self, char[] p) @dynamic {
+	// Fill internal buffer with sufficient bytes to decode
+	if (self.in.len < 2) {
+		usz numCopy = min(self.in.len, self.arr.len);
+		usz! numRead = self.r.read(self.arr[numCopy..]) ?? Errors.UNEXPECTED_EOF?;
+		if (catch err = numRead) {
+			return err?;
+		}
+		self.in = self.arr[:numCopy+numRead];
+		if (self.in.len % 2 != 0 && internal::REVERSE_HEXTABLE[self.in[^1]] > 0x0f) {
+			return Errors.INVALID_BYTE?;
+		}
+	}
+
+	// Decode internal buffe rinto output buffer
+	usz numAvail = self.in.len;
+	if (p.len > numAvail) {
+		p = p[:numAvail];
+	}
+	
+	int numDec = decode(p, self.in[:p.len*2])!!;
+	self.in = self.in[2*numDec..];
+	return numDec;
+}
 
 
 /*
@@ -286,7 +332,6 @@ fn void! dump(InStream in, OutStream out = io::stdout()) {
 	for (;;) {
 		n = in.read(&buf);
 		if (catch excuse = n) {
-			io::printn("EOF!!");
 			if (excuse == io::IoError.EOF) break;
 			return excuse?;
 		}

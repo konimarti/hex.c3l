@@ -65,6 +65,26 @@ fn void test_decode_string() {
 	}
 }
 
+fn void test_decoder() {
+	char[64] buf;
+	usz! n;
+	HexDecoder dec;
+	foreach (t : tests) {
+		String input = ((String)t.enc).temp_ascii_to_lower();
+		bool unexpect_eof = input.len == 0;
+		dec.init(ByteReader{}.init(input));
+		n = dec.read(&buf);
+		if (catch err = n) {
+			if (err == hex::Errors.UNEXPECTED_EOF && unexpect_eof) {
+				break;
+			}
+			return err?;
+		}
+		assert(buf[:n] == t.dec, "got: %s, wanted: %s", buf[:n], t.dec);
+	}
+}
+
+
 fn void test_dump_bytes() {
 	char [40] input;
 	foreach (i, &c : input) *c = (char)i + 30;
