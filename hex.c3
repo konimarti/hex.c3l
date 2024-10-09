@@ -56,6 +56,11 @@ x"ffffffffffffffffffffffffffffffff"
 x"ffffffffffffffffffffffffffffffff"
 x"ffffffffffffffffffffffffffffffff";
 
+fault Errors {
+	INVALID_LENGTH,
+	INVALID_BYTE,
+	DUMPER_CLOSED
+}
 
 /* Returns the length of an encoding of n source bytes. */
 macro int encoded_len(int n) => n * 2;
@@ -264,26 +269,22 @@ fn void! Dumper.close(&self) @dynamic {
  **/
 fn void! dump(InStream in, OutStream out = io::stdout()) {
 	char[16] buf;
-	usz! n, w;
+	usz! n;
 
-	Dumper d = dumper(out);
+	Dumper dump = dumper(out);
 	for (;;) {
 		n = in.read(&buf);
 		if (catch excuse = n) {
-			// io::printfn("excuse: %s", excuse);
-			break;
+			io::printn("EOF!!");
+			if (excuse == io::IoError.EOF) break;
+			return excuse?;
 		}
-		w = d.write(buf[:n]);
-		if (catch excuse = w) {
-			// io::printfn("excuse: %s", excuse);
-			break;
-		}
-		if (n<16) break;
+		dump.write(buf[:n])!;
+		if (n < 16) break;
 	} 
-	return d.close();
+	return dump.close();
 }
 
 fn void! dump_bytes(char[] bytes, OutStream out = io::stdout()) {
-	ByteReader r;
-	return dump(r.init(bytes), out);
+	return dump(ByteReader{}.init(bytes), out);
 }
