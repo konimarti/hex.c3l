@@ -158,7 +158,7 @@ fn int! decode(char[] dst, char[] src) {
  }
 
 /**
- * HexDecoder reads lowercase hexadecimal characters to w.
+ * HexDecoder decodes hexadecimal characters from r.
  **/
 struct HexDecoder (InStream) {
 	InStream r;
@@ -180,9 +180,13 @@ fn char! HexDecoder.read_byte(&self) @dynamic {
 fn usz! HexDecoder.read(&self, char[] p) @dynamic {
 	// Fill internal buffer with sufficient bytes to decode
 	if (self.in.len < 2) {
-		usz numCopy = min(self.in.len, self.arr.len);
-		usz! numRead = self.r.read(self.arr[numCopy..]) ?? Errors.UNEXPECTED_EOF?;
+		usz numCopy = self.in.len;
+		self.arr[:numCopy] = self.in[..]; // Copies either 0 or 1 bytes
+		usz! numRead = self.r.read(self.arr[numCopy..]);
 		if (catch err = numRead) {
+			if (err == io::IoError.EOF) {
+				return Errors.UNEXPECTED_EOF?;
+ 			}
 			return err?;
 		}
 		self.in = self.arr[:numCopy+numRead];
@@ -191,13 +195,13 @@ fn usz! HexDecoder.read(&self, char[] p) @dynamic {
 		}
 	}
 
-	// Decode internal buffe rinto output buffer
-	usz numAvail = self.in.len;
+	// Decode internal buffer into output buffer
+	usz numAvail = self.in.len / 2;
 	if (p.len > numAvail) {
 		p = p[:numAvail];
 	}
 	
-	int numDec = decode(p, self.in[:p.len*2])!!;
+	int numDec = decode(p, self.in[:p.len*2])!;
 	self.in = self.in[2*numDec..];
 	return numDec;
 }

@@ -76,7 +76,7 @@ fn void test_decoder() {
 		n = dec.read(&buf);
 		if (catch err = n) {
 			if (err == hex::Errors.UNEXPECTED_EOF && unexpect_eof) {
-				break;
+				continue;
 			}
 			return err?;
 		}
@@ -99,4 +99,29 @@ fn void test_dump_bytes() {
 	String got = w.str_view();
 	assert(got == expected, "got: %s, wanted: %s", got, expected);
 	w.destroy()!!;
+}
+
+struct ErrTestCase {
+	char[] in;
+	anyfault err;
+}
+
+ErrTestCase[] err_tests = {
+	{"", anyfault{}},
+	{"0", hex::Errors.INVALID_LENGTH},
+	{"zd4aa", hex::Errors.INVALID_BYTE},
+	{"d4aaz", hex::Errors.INVALID_BYTE},
+	{"30313", hex::Errors.INVALID_LENGTH},
+	{"0g", hex::Errors.INVALID_BYTE},
+	{"00gg", hex::Errors.INVALID_BYTE},
+	{"0\x0101", hex::Errors.INVALID_BYTE},
+	{"ffeed", hex::Errors.INVALID_LENGTH}
+};
+
+fn void test_decode_err() {
+	char [64] buf;
+	foreach (t : err_tests) {
+		anyfault err = @catch(hex::decode(buf[..], t.in));
+		assert(err == t.err, "wrong error: got: %s, but wanted: %s", err, t.err);
+	}
 }
