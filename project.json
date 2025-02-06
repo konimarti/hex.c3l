@@ -1,0 +1,12 @@
+{
+	"authors": [ "Koni Marti <koni.marti@gmail.com>" ],
+	"version": "0.1.0",
+	"output": "build",
+	"sources": [ "hex.c3" ],
+	"targets": {
+		"testrunner": {
+			"type": "executable",
+			"sources": [ "hex.c3", "hex_test.c3" ]
+		}
+	}
+}

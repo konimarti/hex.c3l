@@ -200,7 +200,7 @@ fn usz! HexDecoder.read(&self, char[] p) @dynamic {
 	if (p.len > numAvail) {
 		p = p[:numAvail];
 	}
-	
+
 	int numDec = decode(p, self.in[:p.len*2])!;
 	self.in = self.in[2*numDec..];
 	return numDec;
@@ -214,7 +214,7 @@ struct Dumper (OutStream) {
 	OutStream out;
 	char[18] rightChars;
 	char[14] buf;
-	usz used; 
+	usz used;
 	usz n;
 	bool closed;
 }
@@ -242,7 +242,7 @@ fn usz! Dumper.write(&self, char[] data) @dynamic {
 	usz l, n;
 	for (int i = 0; i < data.len; i++) {
 		if (self.used == 0) {
-			// at the beginnig of a line we print the current 
+			// at the beginnig of a line we print the current
 			// offset in hex.
 			self.buf[0] = (char)(self.n >> 24);
 			self.buf[1] = (char)(self.n >> 16);
@@ -341,7 +341,7 @@ fn void! dump(InStream in, OutStream out = io::stdout()) {
 		}
 		dump.write(buf[:n])!;
 		if (n < 16) break;
-	} 
+	}
 	return dump.close();
 }
 
