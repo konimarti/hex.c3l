@@ -2,6 +2,6 @@
 import encoding::hex;
 import std::io;
 
-fn void! main() {
-	hex::dump(io::stdin(), io::stdout())!;
+fn void main() {
+	hex::dump(io::stdin(), io::stdout())!!;
 }

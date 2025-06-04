@@ -2,7 +2,7 @@ import encoding::hex;
 import std::io;
 
 fn void main() {
-	int n; 
+	int n;
 	char[10] enc;
 	char[5] dec;
 
