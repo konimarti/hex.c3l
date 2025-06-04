@@ -60,8 +60,8 @@ Hex code dump like `hexdump -Cv`
     import encoding::hex;
     import std::io;
 
-    fn void! main() {
-        hex::dump_bytes("\t c3 is great! \n")!;
+    fn void main() {
+        hex::dump_bytes("\t c3 is great! \n")!!;
     }
     
     // Output:
@@ -76,7 +76,7 @@ Hex code dump like `hexdump -Cv`
     import encoding::hex;
     import std::io;
 
-    fn void! main() {
-        hex::dump(io::stdin(), io::stdout())!;
+    fn void main() {
+        hex::dump(io::stdin(), io::stdout())!!;
     }
     ```
