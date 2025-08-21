@@ -29,7 +29,7 @@ fn void test_encode() {
 
 fn void test_encode_to_string() {
 	foreach (t : tests) {
-		String got = hex::encode_to_string(t.dec, allocator::temp());
+		String got = hex::encode_to_string(t.dec, tmem);
 		String want = ((String)t.enc).to_lower_tcopy();
 		assert(got == want, "got: %s, wanted: %s", got, want);
 	}
@@ -60,7 +60,7 @@ fn void test_decode() {
 fn void test_decode_string() {
 	foreach (t : tests) {
 		String input = ((String)t.enc).to_lower_tcopy();
-		char[] got = hex::decode_string((String)t.enc, allocator::temp())!!;
+		char[] got = hex::decode_string((String)t.enc, tmem)!!;
 		assert((String)got == (String)t.dec, "got: %s, wanted: %s", got, t.dec);
 	}
 }

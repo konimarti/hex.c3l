@@ -63,7 +63,7 @@ fn int encode(char[] dst, char[] src) {
  * the provided allocator (default: heap).
  *
  **/
-fn String encode_to_string(char[] src, Allocator allocator = allocator::heap()) {
+fn String encode_to_string(char[] src, Allocator allocator = mem) {
 	char[] dst = allocator::alloc_array(allocator, char, encoded_len(src.len));
 	int n = encode(dst, src);
 	return (String)dst;
@@ -80,7 +80,7 @@ struct HexEncoder (OutStream) {
 	char[BUFFERSIZE] out; /* output buffer */
 }
 
-fn HexEncoder* HexEncoder.init(&self, OutStream w, Allocator allocator = allocator::heap()) {
+fn HexEncoder* HexEncoder.init(&self, OutStream w, Allocator allocator = mem) {
 	self.w = w;
 	return self;
 }
@@ -146,7 +146,7 @@ fn int? decode(char[] dst, char[] src) {
  * Returns the bytes represented by the hexadecimal string s.
  *
  **/
- fn char[]? decode_string(String s, Allocator allocator = allocator::heap()) {
+ fn char[]? decode_string(String s, Allocator allocator = mem) {
 	 char[] dst = allocator::alloc_array(allocator, char, decoded_len(s.len));
 	 decode(dst, s)!;
 	 return dst;
@@ -161,7 +161,7 @@ struct HexDecoder (InStream) {
 	char[BUFFERSIZE] arr; 	/* backing array for in */
 }
 
-fn HexDecoder* HexDecoder.init(&self, InStream r, Allocator allocator = allocator::heap()) {
+fn HexDecoder* HexDecoder.init(&self, InStream r, Allocator allocator = mem) {
 	self.r = r;
 	return self;
 }
