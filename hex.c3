@@ -125,19 +125,19 @@ fn int? decode(char[] dst, char[] src) {
 		a = internal::REVERSE_HEXTABLE[p];
 		b = internal::REVERSE_HEXTABLE[q];
 		if (a > 0x0f) {
-			return INVALID_BYTE?;
+			return INVALID_BYTE~;
 		}
 		if (b > 0x0f) {
-			return INVALID_BYTE?;
+			return INVALID_BYTE~;
 		}
 		dst[i] = (a << 4) | b;
 		i++;
 	}
 	if (src.len % 2 == 1) {
 		if (internal::REVERSE_HEXTABLE[src[j-1]] > 0x0f) {
-			return INVALID_BYTE?;
+			return INVALID_BYTE~;
 		}
-		return INVALID_LENGTH?;
+		return INVALID_LENGTH~;
 	}
 	return i;
 }
@@ -180,13 +180,13 @@ fn usz? HexDecoder.read(&self, char[] p) @dynamic {
 		usz? numRead = self.r.read(self.arr[numCopy..]);
 		if (catch err = numRead) {
 			if (err == io::EOF) {
-				return UNEXPECTED_EOF?;
+				return UNEXPECTED_EOF~;
  			}
-			return err?;
+			return err~;
 		}
 		self.in = self.arr[:numCopy+numRead];
 		if (self.in.len % 2 != 0 && internal::REVERSE_HEXTABLE[self.in[^1]] > 0x0f) {
-			return INVALID_BYTE?;
+			return INVALID_BYTE~;
 		}
 	}
 
@@ -225,13 +225,13 @@ fn void? Dumper.write_byte(&self, char c) @dynamic {
 	char[*] data = { c };
 	usz? n = self.write(&data);
 	if (catch excuse = n) {
-		return excuse?;
+		return excuse~;
 	}
 }
 
 fn usz? Dumper.write(&self, char[] data) @dynamic {
 	if (self.closed) {
-		return DUMPER_CLOSED?;
+		return DUMPER_CLOSED~;
 	}
 
 	usz l, n;
@@ -278,7 +278,7 @@ macro char toChar(b) @private => (b < 32 || b > 126) ? '.' : b;
 
 fn void? Dumper.flush(&self) @dynamic {
 	if (self.closed) {
-		return DUMPER_CLOSED?;
+		return DUMPER_CLOSED~;
 	}
 
 	int l;
@@ -332,7 +332,7 @@ fn void? dump(InStream in, OutStream out = io::stdout()) {
 		n = in.read(&buf);
 		if (catch excuse = n) {
 			if (excuse == io::EOF) break;
-			return excuse?;
+			return excuse~;
 		}
 		dump.write(buf[:n])!;
 		if (n < 16) break;

@@ -78,7 +78,7 @@ fn void test_decoder() {
 			if (err == hex::UNEXPECTED_EOF && unexpect_eof) {
 				continue;
 			}
-			return err?!!;
+			return err~!!;
 		}
 		assert(buf[:n] == t.dec, "got: %s, wanted: %s", buf[:n], t.dec);
 	}
